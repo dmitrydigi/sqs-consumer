@@ -27,7 +27,7 @@ const consumer = Consumer.create({
     try {
       cnt += messages?.length || 1;
 
-      if (Math.random() > 0.98) throw new Error('handle message test error');
+      // if (Math.random() > 0.98) throw new Error('handle message test error');
       const ms = 100 + 500 * Math.random();
       await new Promise((resolve) =>
         setTimeout(() => {
