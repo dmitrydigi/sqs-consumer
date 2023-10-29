@@ -1,9 +1,9 @@
 # sqs-consumer
 
-[![NPM downloads](https://img.shields.io/npm/dm/@dginzbourg/sqs-consumer.svg?style=flat)](https://npmjs.org/package/@dginzbourg/sqs-consumer)
-[![Build Status](https://github.com/dginzbourg/sqs-consumer/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dginzbourg/sqs-consumer/actions/workflows/test.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/maintainability)](https://codeclimate.com/github/dginzbourg/sqs-consumer/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/test_coverage)](https://codeclimate.com/github/dginzbourg/sqs-consumer/test_coverage)
+[![NPM downloads](https://img.shields.io/npm/dm/@dmitrydigi/sqs-consumer.svg?style=flat)](https://npmjs.org/package/@dmitrydigi/sqs-consumer)
+[![Build Status](https://github.com/dmitrydigi/sqs-consumer/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dmitrydigi/sqs-consumer/actions/workflows/test.yml)
+[![Maintainability](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/maintainability)](https://codeclimate.com/github/dmitrydigi/sqs-consumer/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/test_coverage)](https://codeclimate.com/github/dmitrydigi/sqs-consumer/test_coverage)
 
 Build SQS-based applications without the boilerplate. Just define an async function that handles the SQS message processing.
 Note that this fork is a temporary one to provide async messages processing while sqs long polling. It processes messages in parallel to sqs polling,
@@ -14,7 +14,7 @@ ie buffers messages by sqs polling and processing the messages asynchronously (m
 To install this package, simply enter the following command into your terminal (or the variant of whatever package manager you are using):
 
 ```bash
-npm install @dginzbourg/sqs-consumer@0.0.1
+npm install @dmitrydigi/sqs-consumer@0.0.1
 ```
 
 > **Note**
@@ -137,10 +137,10 @@ Each consumer is an [`EventEmitter`](https://nodejs.org/api/events.html) and [em
 
 We welcome and appreciate contributions for anyone who would like to take the time to fix a bug or implement a new feature.
 
-But before you get started, [please read the contributing guidelines](https://github.com/dginzbourg/sqs-consumer/blob/main/.github/CONTRIBUTING.md) and [code of conduct](https://github.com/dginzbourg/sqs-consumer/blob/main/.github/CODE_OF_CONDUCT.md).
+But before you get started, [please read the contributing guidelines](https://github.com/dmitrydigi/sqs-consumer/blob/main/.github/CONTRIBUTING.md) and [code of conduct](https://github.com/dmitrydigi/sqs-consumer/blob/main/.github/CODE_OF_CONDUCT.md).
 
 Note, the fork is created to provide async processing solution, hopefully it will be implemented by the bbc/sqs-consumer at some point.
 
 ## License
 
-SQS Consumer is distributed under the Apache License, Version 2.0, see [LICENSE](https://github.com/dginzbourg/sqs-consumer/blob/main/LICENSE) for more information.
+SQS Consumer is distributed under the Apache License, Version 2.0, see [LICENSE](https://github.com/dmitrydigi/sqs-consumer/blob/main/LICENSE) for more information.
