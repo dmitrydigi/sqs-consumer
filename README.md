@@ -1,26 +1,24 @@
 # sqs-consumer
 
-[![NPM downloads](https://img.shields.io/npm/dm/sqs-consumer.svg?style=flat)](https://npmjs.org/package/sqs-consumer)
-[![Build Status](https://github.com/bbc/sqs-consumer/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/bbc/sqs-consumer/actions/workflows/test.yml)
-[![Maintainability](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/maintainability)](https://codeclimate.com/github/bbc/sqs-consumer/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/test_coverage)](https://codeclimate.com/github/bbc/sqs-consumer/test_coverage)
+[![NPM downloads](https://img.shields.io/npm/dm/@dginzbourg/sqs-consumer.svg?style=flat)](https://npmjs.org/package/@dginzbourg/sqs-consumer)
+[![Build Status](https://github.com/dginzbourg/sqs-consumer/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dginzbourg/sqs-consumer/actions/workflows/test.yml)
+[![Maintainability](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/maintainability)](https://codeclimate.com/github/dginzbourg/sqs-consumer/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/16ec3f59e73bc898b7ff/test_coverage)](https://codeclimate.com/github/dginzbourg/sqs-consumer/test_coverage)
 
 Build SQS-based applications without the boilerplate. Just define an async function that handles the SQS message processing.
+Note that this fork is a temporary one to provide async messages processing while sqs long polling. It processes messages in parallel to sqs polling,
+ie buffers messages by sqs polling and processing the messages asynchronously (maxInflightMessages option controls the buffer size).
 
 ## Installation
 
 To install this package, simply enter the following command into your terminal (or the variant of whatever package manager you are using):
 
 ```bash
-npm install sqs-consumer
+npm install @dginzbourg/sqs-consumer@0.0.1
 ```
 
 > **Note**
-> This library assumes you are using [AWS SDK v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sqs/index.html). If you are using v2, please install v5.8.0:
->
-> ```bash
-> npm install sqs-consumer@5.8.0
-> ```
+> This library assumes you are using [AWS SDK v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sqs/index.html).
 
 ### Node version
 
@@ -52,8 +50,8 @@ app.start();
 - The queue is polled continuously for messages using [long polling](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-long-polling.html).
 - Messages are deleted from the queue once the handler function has completed successfully.
 - Throwing an error (or returning a rejected promise) from the handler function will cause the message to be left on the queue. An [SQS redrive policy](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/SQSDeadLetterQueue.html) can be used to move messages that cannot be processed to a dead letter queue.
-- By default messages are processed one at a time – a new message won't be received until the first one has been processed. To process messages in parallel, use the `batchSize` option [detailed below](#options).
-- By default, messages that are sent to the `handleMessage` and `handleMessageBatch` functions will be considered as processed if they return without an error. To acknowledge individual messages, please return the message that you want to acknowledge if you are using `handleMessage` or the messages for `handleMessageBatch`. It's also important to await any processing that you are doing to ensure that messages are processed one at a time.
+- Messages are processed async always. You can control number async processed messages by setting maxInflightMessage [detailed below](#options) (default is 1). To minimize sqs calls, use the `batchSize` option [detailed below](#options).
+- By default, messages that are sent to the `handleMessage` and `handleMessageBatch` functions will be considered as processed if they return without an error. To acknowledge individual messages, please return the message that you want to acknowledge if you are using `handleMessage` or the messages for `handleMessageBatch`. It's also important to await any processing that you are doing to ensure message control flow (ie deletion or visibility change on processing end).
 
 ### Credentials
 
@@ -139,8 +137,10 @@ Each consumer is an [`EventEmitter`](https://nodejs.org/api/events.html) and [em
 
 We welcome and appreciate contributions for anyone who would like to take the time to fix a bug or implement a new feature.
 
-But before you get started, [please read the contributing guidelines](https://github.com/bbc/sqs-consumer/blob/main/.github/CONTRIBUTING.md) and [code of conduct](https://github.com/bbc/sqs-consumer/blob/main/.github/CODE_OF_CONDUCT.md).
+But before you get started, [please read the contributing guidelines](https://github.com/dginzbourg/sqs-consumer/blob/main/.github/CONTRIBUTING.md) and [code of conduct](https://github.com/dginzbourg/sqs-consumer/blob/main/.github/CODE_OF_CONDUCT.md).
+
+Note, the fork is created to provide async processing solution, hopefully it will be implemented by the bbc/sqs-consumer at some point.
 
 ## License
 
-SQS Consumer is distributed under the Apache License, Version 2.0, see [LICENSE](https://github.com/bbc/sqs-consumer/blob/main/LICENSE) for more information.
+SQS Consumer is distributed under the Apache License, Version 2.0, see [LICENSE](https://github.com/dginzbourg/sqs-consumer/blob/main/LICENSE) for more information.

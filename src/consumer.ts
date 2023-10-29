@@ -43,15 +43,18 @@ export class Consumer extends TypedEventEmitter {
   private handleMessageTimeout: number;
   private attributeNames: string[];
   private messageAttributeNames: string[];
+  private maxInflightMessages: number;
   private shouldDeleteMessages: boolean;
   private batchSize: number;
   private visibilityTimeout: number;
-  private terminateVisibilityTimeout: boolean;
+  private terminateVisibilityTimeoutSeconds: number;
   private waitTimeSeconds: number;
   private authenticationErrorTimeout: number;
   private pollingWaitTimeMs: number;
   private heartbeatInterval: number;
   public abortController: AbortController;
+  private inflightMessages = 0;
+  private terminationGracePeriodSeconds = 0;
 
   constructor(options: ConsumerOptions) {
     super();
@@ -66,14 +69,17 @@ export class Consumer extends TypedEventEmitter {
     this.messageAttributeNames = options.messageAttributeNames || [];
     this.batchSize = options.batchSize || 1;
     this.visibilityTimeout = options.visibilityTimeout;
-    this.terminateVisibilityTimeout =
-      options.terminateVisibilityTimeout || false;
+    this.terminateVisibilityTimeoutSeconds =
+      options.terminateVisibilityTimeoutSeconds || 0;
     this.heartbeatInterval = options.heartbeatInterval;
     this.waitTimeSeconds = options.waitTimeSeconds ?? 20;
     this.authenticationErrorTimeout =
       options.authenticationErrorTimeout ?? 10000;
     this.pollingWaitTimeMs = options.pollingWaitTimeMs ?? 0;
     this.shouldDeleteMessages = options.shouldDeleteMessages ?? true;
+    this.maxInflightMessages = options.maxInflightMessages ?? 1;
+    this.terminationGracePeriodSeconds =
+      options.terminationGracePeriodSeconds ?? 0;
     this.sqs =
       options.sqs ||
       new SQSClient({
@@ -96,10 +102,10 @@ export class Consumer extends TypedEventEmitter {
     if (this.stopped) {
       // Create a new abort controller each time the consumer is started
       this.abortController = new AbortController();
-      logger.debug('starting');
+      logger.info('starting');
       this.stopped = false;
       this.emit('started');
-      this.poll();
+      queueMicrotask(async () => await this.poll());
     }
   }
 
@@ -119,25 +125,18 @@ export class Consumer extends TypedEventEmitter {
    */
   public stop(options?: StopOptions): void {
     if (this.stopped) {
-      logger.debug('already_stopped');
+      logger.info('already_stopped');
       return;
     }
 
-    logger.debug('stopping');
+    logger.info('stopping');
     this.stopped = true;
 
-    if (this.pollingTimeoutId) {
-      clearTimeout(this.pollingTimeoutId);
-      this.pollingTimeoutId = undefined;
-    }
-
     if (options?.abort) {
-      logger.debug('aborting');
+      logger.info('aborting');
       this.abortController.abort();
       this.emit('aborted');
     }
-
-    this.emit('stopped');
   }
 
   /**
@@ -183,17 +182,31 @@ export class Consumer extends TypedEventEmitter {
   /**
    * Poll for new messages from SQS
    */
-  private poll(): void {
+  private async poll(): Promise<void> {
     if (this.stopped) {
-      logger.debug('cancelling_poll', {
+      logger.info('cancelling_poll', {
         detail: 'Poll was called while consumer was stopped, cancelling poll...'
       });
+      if (this.pollingTimeoutId) {
+        clearTimeout(this.pollingTimeoutId);
+        this.pollingTimeoutId = undefined;
+      }
+      await this.drain();
+
+      this.emit('stopped');
       return;
     }
 
-    logger.debug('polling');
-
     let currentPollingTimeout = this.pollingWaitTimeMs;
+    if (this.inflightMessages >= this.maxInflightMessages) {
+      // eslint-disable-next-line no-warning-comments
+      /* todo: should have better mechanism to handle inflight messages. I tried Semaphore, but it didn't work, seems like Semaphore is preferabel solution
+       * to wait here until message(s) is consumed and avoid timer to re-enable polling
+       */
+      this.setPollingTimeout(100);
+      return;
+    }
+
     this.receiveMessage({
       QueueUrl: this.queueUrl,
       AttributeNames: this.attributeNames,
@@ -202,11 +215,18 @@ export class Consumer extends TypedEventEmitter {
       WaitTimeSeconds: this.waitTimeSeconds,
       VisibilityTimeout: this.visibilityTimeout
     })
-      .then(this.handleSqsResponse)
+      .then((response) => {
+        if (response) {
+          new Promise(async (resolve) => {
+            await this.enqueueSqsResponse(response);
+            resolve(null);
+          }).catch((reason) => logger.error('failed enqueue response', reason));
+        }
+      })
       .catch((err) => {
         this.emitError(err);
         if (isConnectionError(err)) {
-          logger.debug('authentication_error', {
+          logger.error('authentication_error', {
             detail:
               'There was an authentication error. Pausing before retrying.'
           });
@@ -215,14 +235,18 @@ export class Consumer extends TypedEventEmitter {
         return;
       })
       .then(() => {
-        if (this.pollingTimeoutId) {
-          clearTimeout(this.pollingTimeoutId);
-        }
-        this.pollingTimeoutId = setTimeout(this.poll, currentPollingTimeout);
+        this.setPollingTimeout(currentPollingTimeout);
       })
       .catch((err) => {
         this.emitError(err);
       });
+  }
+
+  private setPollingTimeout(timeout: number) {
+    if (this.pollingTimeoutId) {
+      clearTimeout(this.pollingTimeoutId);
+    }
+    this.pollingTimeoutId = setTimeout(this.poll, timeout);
   }
 
   /**
@@ -255,23 +279,24 @@ export class Consumer extends TypedEventEmitter {
    * the message handler.
    * @param response The output from AWS SQS
    */
-  private async handleSqsResponse(
+  private async enqueueSqsResponse(
     response: ReceiveMessageCommandOutput
   ): Promise<void> {
     if (hasMessages(response)) {
-      const handlerProcessingDebugger = setInterval(() => {
-        logger.debug('handler_processing', {
-          detail: 'The handler is still processing the message(s)...'
-        });
-      }, 1000);
+      // response.Messages.forEach((m) => this.workQueue.push(m));
+      // const handlerProcessingDebugger = setInterval(() => {
+      //   logger.debug('handler_processing', {
+      //     detail: 'The handler is still processing the message(s)...'
+      //   });
+      // }, 1000);
 
       if (this.handleMessageBatch) {
         await this.processMessageBatch(response.Messages);
       } else {
-        await Promise.all(response.Messages.map(this.processMessage));
+        await Promise.all(response.Messages.map((m) => this.processMessage(m)));
       }
 
-      clearInterval(handlerProcessingDebugger);
+      // clearInterval(handlerProcessingDebugger);
 
       this.emit('response_processed');
     } else if (response) {
@@ -288,6 +313,8 @@ export class Consumer extends TypedEventEmitter {
     let heartbeatTimeoutId: NodeJS.Timeout | undefined = undefined;
 
     try {
+      await this.acquire();
+
       this.emit('message_received', message);
 
       if (this.heartbeatInterval) {
@@ -295,8 +322,7 @@ export class Consumer extends TypedEventEmitter {
       }
 
       const ackedMessage = await this.executeHandler(message);
-
-      if (ackedMessage?.MessageId === message.MessageId) {
+      if (ackedMessage?.['MessageId'] === message.MessageId) {
         await this.deleteMessage(message);
 
         this.emit('message_processed', message);
@@ -304,10 +330,15 @@ export class Consumer extends TypedEventEmitter {
     } catch (err) {
       this.emitError(err, message);
 
-      if (this.terminateVisibilityTimeout) {
-        await this.changeVisibilityTimeout(message, 0);
+      if (this.terminateVisibilityTimeoutSeconds >= 0) {
+        await this.changeVisibilityTimeout(
+          message,
+          this.terminateVisibilityTimeoutSeconds
+        );
       }
     } finally {
+      this.release();
+
       if (this.heartbeatInterval) {
         clearInterval(heartbeatTimeoutId);
       }
@@ -322,6 +353,8 @@ export class Consumer extends TypedEventEmitter {
     let heartbeatTimeoutId: NodeJS.Timeout | undefined = undefined;
 
     try {
+      await this.acquire(messages.length);
+
       messages.forEach((message) => {
         this.emit('message_received', message);
       });
@@ -332,7 +365,7 @@ export class Consumer extends TypedEventEmitter {
 
       const ackedMessages = await this.executeBatchHandler(messages);
 
-      if (ackedMessages?.length > 0) {
+      if (Array.isArray(ackedMessages) && ackedMessages.length > 0) {
         await this.deleteMessageBatch(ackedMessages);
 
         ackedMessages.forEach((message) => {
@@ -342,17 +375,19 @@ export class Consumer extends TypedEventEmitter {
     } catch (err) {
       this.emit('error', err, messages);
 
-      if (this.terminateVisibilityTimeout) {
+      if (this.terminateVisibilityTimeoutSeconds) {
         await this.changeVisibilityTimeoutBatch(messages, 0);
       }
     } finally {
+      this.release(messages.length);
       clearInterval(heartbeatTimeoutId);
     }
   }
 
   /**
    * Trigger a function on a set interval
-   * @param heartbeatFn The function that should be triggered
+   * @param message
+   * @param messages
    */
   private startHeartbeat(
     message?: Message,
@@ -435,10 +470,8 @@ export class Consumer extends TypedEventEmitter {
    */
   private async executeHandler(message: Message): Promise<Message> {
     let handleMessageTimeoutId: NodeJS.Timeout | undefined = undefined;
-
+    let result;
     try {
-      let result;
-
       if (this.handleMessageTimeout) {
         const pending = new Promise((_, reject) => {
           handleMessageTimeoutId = setTimeout((): void => {
@@ -472,7 +505,6 @@ export class Consumer extends TypedEventEmitter {
   private async executeBatchHandler(messages: Message[]): Promise<Message[]> {
     try {
       const result = await this.handleMessageBatch(messages);
-
       return result instanceof Object ? result : messages;
     } catch (err) {
       if (err instanceof Error) {
@@ -543,5 +575,37 @@ export class Consumer extends TypedEventEmitter {
     } catch (err) {
       throw toSQSError(err, `SQS delete message failed: ${err.message}`);
     }
+  }
+
+  private async acquire(permits = 1) {
+    this.inflightMessages += permits;
+  }
+
+  private release(permits = 1) {
+    this.inflightMessages -= permits;
+  }
+
+  private async drain() {
+    if (this.terminationGracePeriodSeconds > 0) {
+      logger.info('wait for draining');
+      let checkInflightInterval;
+      const waitInflightDrain = new Promise((resolve) => {
+        checkInflightInterval = setInterval((): void => {
+          if (this.inflightMessages === 0) {
+            resolve(null);
+          }
+        }, 1000);
+      });
+      let waitTerminationTimeout;
+      const waitTermination = new Promise((_, reject) => {
+        waitTerminationTimeout = setTimeout((): void => {
+          reject(new TimeoutError());
+        }, this.terminationGracePeriodSeconds * 1000);
+      });
+      await Promise.race([waitInflightDrain, waitTermination]);
+      clearInterval(checkInflightInterval);
+      clearTimeout(waitTerminationTimeout);
+    }
+    logger.info(`drained: inflight messages: ${this.inflightMessages}`);
   }
 }
