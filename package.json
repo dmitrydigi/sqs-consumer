@@ -14,6 +14,7 @@
     "prepublishOnly": "npm run build",
     "test:unit": "mocha --recursive --full-trace --exit",
     "pretest:integration:init": "npm run build",
+    "docker-compose:down": "docker-compose -f ./test/scripts/docker-compose.yml down",
     "test:integration:init": "sh ./test/scripts/initIntTests.sh",
     "test:integration": "npm run test:integration:init && cucumber-js --config ./test/config/cucumber.js",
     "test": "npm run test:unit && npm run test:integration",
@@ -62,7 +63,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.428.0",
-    "debug": "^4.3.4"
+    "pino": "^8.16.1"
   },
   "peerDependencies": {
     "@aws-sdk/client-sqs": "^3.428.0"

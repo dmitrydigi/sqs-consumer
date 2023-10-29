@@ -8,12 +8,12 @@ export interface ConsumerOptions {
   /**
    * List of queue attributes to retrieve (i.e.
    * `['All', 'ApproximateFirstReceiveTimestamp', 'ApproximateReceiveCount']`).
-   * @defaultvalue `[]`
+   * @default-value `[]`
    */
   attributeNames?: string[];
   /**
    * List of message attributes to retrieve (i.e. `['name', 'address']`).
-   * @defaultvalue `[]`
+   * @default-value `[]`
    */
   messageAttributeNames?: string[];
   /** @hidden */
@@ -23,7 +23,7 @@ export interface ConsumerOptions {
    *
    * This cannot be higher than the
    * [AWS limit of 10](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html).
-   * @defaultvalue `1`
+   * @default-value `1`
    */
   batchSize?: number;
   /**
@@ -34,24 +34,23 @@ export interface ConsumerOptions {
   /**
    * The duration (in seconds) for which the call will wait for a message to arrive in
    * the queue before returning.
-   * @defaultvalue `20`
+   * @default-value `20`
    */
   waitTimeSeconds?: number;
   /**
    * The duration (in milliseconds) to wait before retrying after an authentication error.
-   * @defaultvalue `10000`
+   * @default-value `10000`
    */
   authenticationErrorTimeout?: number;
   /**
    * The duration (in milliseconds) to wait before repolling the queue.
-   * @defaultvalue `0`
+   * @default-value `0`
    */
   pollingWaitTimeMs?: number;
   /**
-   * If true, sets the message visibility timeout to 0 after a `processing_error`.
-   * @defaultvalue `false`
+   * The duration (in seconds), sets the message visibility timeout seconds after a `processing_error`.
    */
-  terminateVisibilityTimeout?: boolean;
+  terminateVisibilityTimeoutSeconds?: number;
   /**
    * The interval (in seconds) between requests to extend the message visibility timeout.
    *
@@ -68,7 +67,7 @@ export interface ConsumerOptions {
   sqs?: SQSClient;
   /**
    * The AWS region.
-   * @defaultValue process.env.AWS_REGION || `eu-west-1`
+   * @default-value process.env.AWS_REGION || `eu-west-1`
    */
   region?: string;
   /**
@@ -81,9 +80,20 @@ export interface ConsumerOptions {
   /**
    * Default to `true`, if you don't want the package to delete messages from sqs
    * set this to `false`.
-   * @defaultvalue `true`
+   * @default-value `true`
    */
   shouldDeleteMessages?: boolean;
+  /**
+   * Maximum amount of inflight async messages tasks
+   * 
+   * @default-value 1
+   */
+  maxInflightMessages?: number;
+  /**
+   * Duration to wait for async messages tasks to finish
+   * @default-value 0
+   */ 
+  terminationGracePeriodSeconds?: number;
   /**
    * An `async` function (or function that returns a `Promise`) to be called whenever
    * a message is received.
@@ -130,7 +140,7 @@ export interface StopOptions {
   /**
    * Default to `false`, if you want the stop action to also abort requests to SQS
    * set this to `true`.
-   * @defaultvalue `false`
+   * @default-value `false`
    */
   abort?: boolean;
 }
@@ -250,7 +260,7 @@ export type AWSError = {
 
     /**
      * The total amount of time (in milliseconds) that was spent waiting between
-     * retry attempts.
+     * retry attempts.f
      */
     totalRetryDelay?: number;
   };

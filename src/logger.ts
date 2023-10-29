@@ -1,5 +1,14 @@
-const debug = require('debug')('sqs-consumer');
+const pino = require('pino');
 
-export const logger = {
-  debug
-};
+export const logger = pino({
+    level: process.env.LOG_LEVEL || 'info',
+    timestamp: pino.stdTimeFunctions.isoTime,
+    formatters: {
+        level: (label) => {
+            return {level: label.toUpperCase()};
+        },
+    },
+});
+
+
+

@@ -23,23 +23,27 @@ Given('a message is sent to the SQS queue', async () => {
   assert.strictEqual(size, 1);
 });
 
-Then('the message should be consumed without error', async () => {
-  consumer.start();
+Then(
+  'the message should be consumed without error',
+  { timeout: 2 * 5000 },
+  async () => {
+    consumer.start();
 
-  const isRunning = consumer.isRunning;
+    const isRunning = consumer.isRunning;
 
-  assert.strictEqual(isRunning, true);
+    assert.strictEqual(isRunning, true);
 
-  await pEvent(consumer, 'response_processed');
+    await pEvent(consumer, 'empty');
 
-  consumer.stop();
-  assert.strictEqual(consumer.isRunning, false);
+    consumer.stop();
+    assert.strictEqual(consumer.isRunning, false);
 
-  const size = await producer.queueSize();
-  assert.strictEqual(size, 0);
-});
+    const size = await producer.queueSize();
+    assert.strictEqual(size, 0);
+  }
+);
 
-Given('messages are sent to the SQS queue', async () => {
+Given('messages are sent to the SQS queue', { timeout: 2 * 5000 }, async () => {
   const params = {
     QueueUrl: QUEUE_URL
   };

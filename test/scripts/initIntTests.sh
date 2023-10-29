@@ -13,6 +13,8 @@ export AWS_SECRET_ACCESS_KEY="secret"
 export AWS_DEFAULT_REGION="eu-west-1"
 
 echo "Waiting for SQS, attempting every 5s"
+sleep 5
+
 until $(aws --endpoint-url=http://localhost:4566 sqs get-queue-url --queue-name sqs-consumer-data --region eu-west-1 | grep "{
     "QueueUrl": "http://localhost:4566/000000000000/sqs-consumer-data"
 }" > /dev/null); do
