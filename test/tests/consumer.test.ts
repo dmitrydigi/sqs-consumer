@@ -173,7 +173,7 @@ describe('Consumer', () => {
 
       // Starts and abort is false
       consumer.start();
-      await clock.runToLastAsync()
+      await clock.runToLastAsync();
       assert.isFalse(sqs.send.lastCall.lastArg.abortSignal.aborted);
 
       // normal stop without an abort and abort is false

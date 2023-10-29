@@ -18,8 +18,7 @@ npm install @dginzbourg/sqs-consumer@0.0.1
 ```
 
 > **Note**
-> This library assumes you are using [AWS SDK v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sqs/index.html). 
->
+> This library assumes you are using [AWS SDK v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sqs/index.html).
 
 ### Node version
 
@@ -140,7 +139,7 @@ We welcome and appreciate contributions for anyone who would like to take the ti
 
 But before you get started, [please read the contributing guidelines](https://github.com/dginzbourg/sqs-consumer/blob/main/.github/CONTRIBUTING.md) and [code of conduct](https://github.com/dginzbourg/sqs-consumer/blob/main/.github/CODE_OF_CONDUCT.md).
 
-Note, the fork is created to provide async processing solution, hopefully it will be implemented by the bbc/sqs-consumer at some point. 
+Note, the fork is created to provide async processing solution, hopefully it will be implemented by the bbc/sqs-consumer at some point.
 
 ## License
 

@@ -85,14 +85,14 @@ export interface ConsumerOptions {
   shouldDeleteMessages?: boolean;
   /**
    * Maximum amount of inflight async messages tasks
-   * 
+   *
    * @default-value 1
    */
   maxInflightMessages?: number;
   /**
    * Duration to wait for async messages tasks to finish
    * @default-value 0
-   */ 
+   */
   terminationGracePeriodSeconds?: number;
   /**
    * An `async` function (or function that returns a `Promise`) to be called whenever
