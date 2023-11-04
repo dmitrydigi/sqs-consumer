@@ -1551,13 +1551,13 @@ describe('Consumer', () => {
 
   describe('logger', () => {
     it('logs a debug event when an event is emitted', async () => {
-      const loggerInfo = sandbox.stub(logger, 'info');
+      const loggerInfo = sandbox.stub(logger, 'debug');
 
       consumer.start();
       consumer.stop();
       await Promise.all([pEvent(consumer, 'stopped'), clock.runAllAsync()]);
 
-      sandbox.assert.callCount(loggerInfo, 4);
+      sandbox.assert.callCount(loggerInfo, 6);
       sandbox.assert.calledWithMatch(loggerInfo, 'starting');
       sandbox.assert.calledWithMatch(loggerInfo, 'cancelling_poll');
       sandbox.assert.calledWithMatch(loggerInfo, 'stopping');

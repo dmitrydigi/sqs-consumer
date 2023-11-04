@@ -1,13 +1,9 @@
-const pino = require('pino');
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  timestamp: pino.stdTimeFunctions.isoTime,
-  formatters: {
-    level: (label) => {
-      return { level: label.toUpperCase() };
-    }
-  }
-});
+const debug = require('debug')('sqs-consumer');
+
+const logger = {
+  debug
+};
+
 const { Consumer } = require('../../../../dist/consumer');
 
 const { QUEUE_URL, sqs } = require('../sqs');
@@ -31,14 +27,14 @@ const consumer = Consumer.create({
       const ms = 100 + 500 * Math.random();
       await new Promise((resolve) =>
         setTimeout(() => {
-          logger.info(`start handle message processing timer ${c}, ${ms}`);
+          logger.debug(`start handle message processing timer ${c}, ${ms}`);
           resolve();
         }, ms)
       );
 
-      logger.info(`finished handle message processing timer  ${c}`);
+      logger.debug(`finished handle message processing timer  ${c}`);
     } catch (e) {
-      logger.error(`failed handle message processing: ${c}`, e);
+      logger.debug(`failed handle message processing: ${c}`, e);
       throw e;
     }
     return messages;

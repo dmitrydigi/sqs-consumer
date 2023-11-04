@@ -1,31 +1,31 @@
 import {
-  SQSClient,
-  Message,
-  ChangeMessageVisibilityCommand,
-  ChangeMessageVisibilityCommandInput,
-  ChangeMessageVisibilityCommandOutput,
   ChangeMessageVisibilityBatchCommand,
   ChangeMessageVisibilityBatchCommandInput,
   ChangeMessageVisibilityBatchCommandOutput,
-  DeleteMessageCommand,
-  DeleteMessageCommandInput,
+  ChangeMessageVisibilityCommand,
+  ChangeMessageVisibilityCommandInput,
+  ChangeMessageVisibilityCommandOutput,
   DeleteMessageBatchCommand,
   DeleteMessageBatchCommandInput,
+  DeleteMessageCommand,
+  DeleteMessageCommandInput,
+  Message,
   ReceiveMessageCommand,
   ReceiveMessageCommandInput,
-  ReceiveMessageCommandOutput
+  ReceiveMessageCommandOutput,
+  SQSClient
 } from '@aws-sdk/client-sqs';
 
 import { ConsumerOptions, StopOptions, UpdatableOptions } from './types';
 import { TypedEventEmitter } from './emitter';
 import { autoBind } from './bind';
 import {
+  isConnectionError,
   SQSError,
   TimeoutError,
-  toSQSError,
-  isConnectionError
+  toSQSError
 } from './errors';
-import { validateOption, assertOptions, hasMessages } from './validation';
+import { assertOptions, hasMessages, validateOption } from './validation';
 import { logger } from './logger';
 
 /**
@@ -102,7 +102,7 @@ export class Consumer extends TypedEventEmitter {
     if (this.stopped) {
       // Create a new abort controller each time the consumer is started
       this.abortController = new AbortController();
-      logger.info('starting');
+      logger.debug('starting');
       this.stopped = false;
       this.emit('started');
       queueMicrotask(async () => await this.poll());
@@ -125,15 +125,15 @@ export class Consumer extends TypedEventEmitter {
    */
   public stop(options?: StopOptions): void {
     if (this.stopped) {
-      logger.info('already_stopped');
+      logger.debug('already_stopped');
       return;
     }
 
-    logger.info('stopping');
+    logger.debug('stopping');
     this.stopped = true;
 
     if (options?.abort) {
-      logger.info('aborting');
+      logger.debug('aborting');
       this.abortController.abort();
       this.emit('aborted');
     }
@@ -184,7 +184,7 @@ export class Consumer extends TypedEventEmitter {
    */
   private async poll(): Promise<void> {
     if (this.stopped) {
-      logger.info('cancelling_poll', {
+      logger.debug('cancelling_poll', {
         detail: 'Poll was called while consumer was stopped, cancelling poll...'
       });
       if (this.pollingTimeoutId) {
@@ -220,19 +220,18 @@ export class Consumer extends TypedEventEmitter {
           new Promise(async (resolve) => {
             await this.enqueueSqsResponse(response);
             resolve(null);
-          }).catch((reason) => logger.error('failed enqueue response', reason));
+          }).catch((reason) => logger.debug('failed enqueue response', reason));
         }
       })
       .catch((err) => {
         this.emitError(err);
         if (isConnectionError(err)) {
-          logger.error('authentication_error', {
+          logger.debug('authentication_error', {
             detail:
               'There was an authentication error. Pausing before retrying.'
           });
           currentPollingTimeout = this.authenticationErrorTimeout;
         }
-        return;
       })
       .then(() => {
         this.setPollingTimeout(currentPollingTimeout);
@@ -587,7 +586,7 @@ export class Consumer extends TypedEventEmitter {
 
   private async drain() {
     if (this.terminationGracePeriodSeconds > 0) {
-      logger.info('wait for draining');
+      logger.debug('wait for draining');
       let checkInflightInterval;
       const waitInflightDrain = new Promise((resolve) => {
         checkInflightInterval = setInterval((): void => {
@@ -606,6 +605,6 @@ export class Consumer extends TypedEventEmitter {
       clearInterval(checkInflightInterval);
       clearTimeout(waitTerminationTimeout);
     }
-    logger.info(`drained: inflight messages: ${this.inflightMessages}`);
+    logger.debug(`drained: inflight messages: ${this.inflightMessages}`);
   }
 }
