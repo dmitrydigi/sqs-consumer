@@ -50,7 +50,7 @@ export interface ConsumerOptions {
   /**
    * The duration (in seconds), sets the message visibility timeout seconds after a `processing_error`.
    */
-  terminateVisibilityTimeoutSeconds?: number;
+  terminateVisibilityTimeout?: number;
   /**
    * The interval (in seconds) between requests to extend the message visibility timeout.
    *

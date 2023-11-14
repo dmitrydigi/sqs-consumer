@@ -720,7 +720,7 @@ describe('Consumer', () => {
     it('terminate message visibility timeout on processing error', async () => {
       handleMessage.rejects(new Error('Processing error'));
 
-      consumer.terminateVisibilityTimeoutSec = 0;
+      consumer.terminateVisibilityTimeout = 0;
 
       consumer.start();
       await pEvent(consumer, 'processing_error');
@@ -757,7 +757,7 @@ describe('Consumer', () => {
       const sqsError = new Error('Processing error');
       sqsError.name = 'SQSError';
       sqs.send.withArgs(mockChangeMessageVisibility).rejects(sqsError);
-      consumer.terminateVisibilityTimeoutSec = 0;
+      consumer.terminateVisibilityTimeout = 0;
 
       consumer.start();
       await pEvent(consumer, 'error');
