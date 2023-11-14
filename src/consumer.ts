@@ -47,7 +47,7 @@ export class Consumer extends TypedEventEmitter {
   private shouldDeleteMessages: boolean;
   private batchSize: number;
   private visibilityTimeout: number;
-  private terminateVisibilityTimeoutSeconds: number;
+  private terminateVisibilityTimeout: number;
   private waitTimeSeconds: number;
   private authenticationErrorTimeout: number;
   private pollingWaitTimeMs: number;
@@ -69,8 +69,8 @@ export class Consumer extends TypedEventEmitter {
     this.messageAttributeNames = options.messageAttributeNames || [];
     this.batchSize = options.batchSize || 1;
     this.visibilityTimeout = options.visibilityTimeout;
-    this.terminateVisibilityTimeoutSeconds =
-      options.terminateVisibilityTimeoutSeconds || 0;
+    this.terminateVisibilityTimeout =
+      options.terminateVisibilityTimeout || 0;
     this.heartbeatInterval = options.heartbeatInterval;
     this.waitTimeSeconds = options.waitTimeSeconds ?? 20;
     this.authenticationErrorTimeout =
@@ -329,10 +329,10 @@ export class Consumer extends TypedEventEmitter {
     } catch (err) {
       this.emitError(err, message);
 
-      if (this.terminateVisibilityTimeoutSeconds >= 0) {
+      if (this.terminateVisibilityTimeout >= 0) {
         await this.changeVisibilityTimeout(
           message,
-          this.terminateVisibilityTimeoutSeconds
+          this.terminateVisibilityTimeout
         );
       }
     } finally {
@@ -374,7 +374,7 @@ export class Consumer extends TypedEventEmitter {
     } catch (err) {
       this.emit('error', err, messages);
 
-      if (this.terminateVisibilityTimeoutSeconds) {
+      if (this.terminateVisibilityTimeout) {
         await this.changeVisibilityTimeoutBatch(messages, 0);
       }
     } finally {
