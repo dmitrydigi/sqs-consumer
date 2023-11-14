@@ -69,8 +69,7 @@ export class Consumer extends TypedEventEmitter {
     this.messageAttributeNames = options.messageAttributeNames || [];
     this.batchSize = options.batchSize || 1;
     this.visibilityTimeout = options.visibilityTimeout;
-    this.terminateVisibilityTimeout =
-      options.terminateVisibilityTimeout || 0;
+    this.terminateVisibilityTimeout = options.terminateVisibilityTimeout || 0;
     this.heartbeatInterval = options.heartbeatInterval;
     this.waitTimeSeconds = options.waitTimeSeconds ?? 20;
     this.authenticationErrorTimeout =
