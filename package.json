@@ -1,6 +1,6 @@
 {
-  "name": "@dmitrydigi/sqs-consumer",
-  "version": "0.1.0",
+  "name": "sqs-consumer",
+  "version": "7.5.0",
   "description": "Build SQS-based Node applications without the boilerplate",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,12 +29,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dmitrydigi/sqs-consumer.git"
+    "url": "https://github.com/bbc/sqs-consumer.git"
   },
   "bugs": {
-    "url": "https://github.com/dmitrydigi/sqs-consumer/issues"
+    "url": "https://github.com/bbc/sqs-consumer/issues"
   },
-  "homepage": "https://dmitrydigi.github.io/sqs-consumer/",
+  "homepage": "https://bbc.github.io/sqs-consumer/",
   "keywords": [
     "sqs",
     "queue",
